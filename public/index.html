@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Attendance &amp; Performance Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Data Controls</h2>
+      <p>Upload your dataset in CSV or Excel format, or use the built-in sample dataset for quick exploration.</p>
+      <label class="field-label" for="fileInput">Upload dataset from your device</label>
+      <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" />
+      <button id="sampleBtn" class="btn btn-primary">Use sample dataset</button>
+      <div id="sidebarStatus" class="status"></div>
+    </aside>
+
+    <main class="content">
+      <h1>School Attendance &amp; Performance Dashboard</h1>
+      <p class="subtitle">
+        Explore attendance and academic performance trends, identify at-risk students, and inspect
+        correlations using your own dataset or the sample dataset.
+      </p>
+
+      <div id="emptyState" class="info-box">
+        Upload a CSV/Excel file or click "Use sample dataset" in the sidebar to begin.
+      </div>
+
+      <div id="results" class="hidden">
+        <div id="statusBanner" class="success-box"></div>
+
+        <section>
+          <h2>Dataset Preview</h2>
+          <div class="table-scroll"><table id="previewTable"></table></div>
+        </section>
+
+        <section class="metrics-row">
+          <div class="metric">
+            <div class="metric-label">Rows</div>
+            <div class="metric-value" id="metricRows">-</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Columns</div>
+            <div class="metric-value" id="metricCols">-</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">At-risk students</div>
+            <div class="metric-value" id="metricAtRisk">-</div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Analysis Results</h2>
+          <h3>Average Performance by Attendance Category</h3>
+          <div class="table-scroll"><table id="categoryTable"></table></div>
+          <h3>Class-wise Attendance and Average Marks</h3>
+          <div class="table-scroll"><table id="classTable"></table></div>
+          <h3>Subject-wise Averages</h3>
+          <div class="table-scroll"><table id="subjectTable"></table></div>
+          <div id="correlationInfo" class="info-box"></div>
+        </section>
+
+        <section>
+          <h2>Charts</h2>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <canvas id="chartScatter"></canvas>
+            </div>
+            <div class="chart-card">
+              <canvas id="chartCategoryBar"></canvas>
+            </div>
+            <div class="chart-card">
+              <canvas id="chartSubjectBar"></canvas>
+            </div>
+            <div class="chart-card">
+              <canvas id="chartClassBar"></canvas>
+            </div>
+          </div>
+          <h3>Correlation Heatmap</h3>
+          <div class="table-scroll"><table id="heatmapTable" class="heatmap"></table></div>
+        </section>
+
+        <section>
+          <h2>At-risk Students</h2>
+          <p>Students with attendance below 70% or average marks below 50.</p>
+          <div class="table-scroll"><table id="atRiskTable"></table></div>
+          <button id="downloadBtn" class="btn btn-secondary">Download at-risk students</button>
+        </section>
+
+        <section>
+          <h2>Prediction Models</h2>
+          <p class="info-box">
+            This dashboard focuses on interactive exploration. The regression and risk-classifier
+            models (linear regression + decision tree) from the original analysis are available by
+            running <code>prediction.py</code> locally with Python — see the README for instructions.
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -2,6 +2,15 @@
 
 A beginner-friendly Data Science project using Python, Pandas, Matplotlib, Seaborn and optional Scikit-learn.
 
+## Live dashboard (Netlify)
+
+The `public/` folder contains a static, client-side version of the dashboard (HTML/CSS/JS with Chart.js)
+that runs entirely in the browser and is what gets deployed to Netlify — see `netlify.toml`. It reproduces
+the dataset preview, summary metrics, category/class/subject breakdowns, charts, correlation heatmap, and
+at-risk student list from `app.py`, using either the bundled sample dataset or an uploaded CSV/Excel file.
+The regression and decision-tree risk-classifier models are not part of the static dashboard; run
+`prediction.py` locally with Python to see those.
+
 ## Files
 - `generate_dataset.py` - creates a sample school dataset
 - `analysis.py` - performs cleaning, EDA, correlation and visualizations
