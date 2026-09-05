@@ -29,7 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-DATA_FILE = "school_attendance_performance.csv"
+DATA_FILE = "school attendance performance.csv"
 NUMERIC_COLUMNS = [
     "Attendance_Percentage",
     "Maths_Marks",
@@ -124,8 +124,27 @@ def load_data(uploaded_file) -> pd.DataFrame:
     raise ValueError("Unsupported file format. Please upload a CSV or Excel file.")
 
 
+def normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    canonical_names = {
+        name.lower(): name
+        for name in [
+            "Student_ID",
+            "Student_Name",
+            "Class",
+            "Gender",
+            *NUMERIC_COLUMNS,
+        ]
+    }
+    renamed_columns = {}
+    for column in df.columns:
+        normalized = re.sub(r"[^0-9A-Za-z]+", "_", str(column).strip()).strip("_")
+        normalized = re.sub(r"_+", "_", normalized)
+        renamed_columns[column] = canonical_names.get(normalized.lower(), normalized)
+    return df.rename(columns=renamed_columns)
+
+
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.drop_duplicates().copy()
+    df = normalize_column_names(df).drop_duplicates().copy()
     for col in NUMERIC_COLUMNS:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.dropna(subset=NUMERIC_COLUMNS)
