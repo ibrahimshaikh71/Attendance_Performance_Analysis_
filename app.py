@@ -488,6 +488,26 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
         ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
         st.pyplot(fig)
 
+    st.subheader("Study Time and Performance")
+    st.caption("Explore how daily study hours relate to average marks. Hover over points to inspect individual records.")
+    interactive_df = df[
+        [
+            "Study_Hours_Per_Day",
+            "Average_Marks",
+            "Attendance_Category",
+            "Class",
+        ]
+    ].dropna()
+    st.scatter_chart(
+        interactive_df,
+        x="Study_Hours_Per_Day",
+        y="Average_Marks",
+        color="Attendance_Category",
+        size="Average_Marks",
+        height=390,
+        width="stretch",
+    )
+
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(
         df[corr_columns].corr(),
@@ -502,13 +522,17 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
 
 
 def main():
-    st.title("School Attendance & Performance Dashboard")
     st.markdown(
         """
-        <div class="dashboard-hero">
-            <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">Academic overview and student risk monitoring</div>
-            <div style="color: #475569; margin-top: 0.35rem;">Filter by class and subject to review attendance performance, subject trends, and student risk levels in one place.</div>
-        </div>
+        <section class="dashboard-hero">
+            <div class="hero-kicker"><span class="hero-dot"></span> INSIGHT CONSOLE <span class="hero-rule"></span> LIVE DATA VIEW</div>
+            <h1 class="hero-title">School Attendance<br><span>&amp; Performance</span></h1>
+            <div class="hero-footer">
+                <div class="hero-summary">Academic overview and student risk monitoring</div>
+                <div class="hero-description">Review attendance patterns, subject trends, and student risk levels in one focused workspace.</div>
+            </div>
+            <div class="hero-corner-mark">01<br><span>ACADEMIC<br>YEAR</span></div>
+        </section>
         """,
         unsafe_allow_html=True,
     )
@@ -516,33 +540,39 @@ def main():
     st.markdown(
         """
         <style>
-        .stApp { background: linear-gradient(180deg, #edf5ff 0%, #f8fbff 35%, #f1f5f9 100%); }
-        .block-container { padding: 1.5rem 2rem 2.5rem; }
+        :root { --ink: #102a43; --muted: #52606d; --line: #d9e2ec; --blue: #2563eb; --teal: #0f9d8a; --coral: #f97362; }
+        .stApp { background: radial-gradient(circle at 8% 0%, rgba(37,99,235,0.13), transparent 28rem), linear-gradient(180deg, #eef6ff 0%, #f8fbff 38%, #f1f5f9 100%); color: var(--ink); }
+        .stApp::before { content: ""; display: block; position: fixed; inset: 0 0 auto; height: 4px; z-index: 1000; background: linear-gradient(90deg, var(--blue) 0 62%, var(--teal) 62% 82%, var(--coral) 82% 100%); }
+        .block-container { max-width: 1500px; padding: 1.25rem 2rem 2.5rem; }
         [data-testid="stSidebar"] { background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%); border-right: 1px solid #dfe9f7; }
-        .stButton>button {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.65rem 1.2rem;
-            font-weight: 600;
-            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
-        }
-        .stButton>button:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
-        .stDataFrame { border-radius: 16px; overflow: hidden; border: 1px solid #e6edf7; }
-        .stSelectbox > div > div { border-radius: 10px; }
+        [data-testid="stSidebar"] > div:first-child { padding-top: 2rem; }
+        [data-testid="stSidebar"] .stMarkdown p { color: var(--muted); }
+        h1, h2, h3 { color: var(--ink); letter-spacing: 0; }
+        h2, h3 { border-left: 4px solid var(--teal); padding-left: 0.65rem; }
+        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { border-left: 0; padding-left: 0; }
+        .dashboard-hero { position: relative; overflow: hidden; background: linear-gradient(112deg, #ffffff 0%, #f4f9ff 58%, #e5f7f2 100%); border: 1px solid #d8e5f1; border-radius: 24px; padding: 1.5rem 2rem 1.35rem; margin: 0.25rem 0 1.45rem; box-shadow: 0 18px 40px rgba(31, 64, 104, 0.09); }
+        .dashboard-hero::after { content: ""; position: absolute; width: 18rem; height: 18rem; right: -6rem; top: -9rem; border: 1px solid rgba(15,157,138,0.18); border-radius: 50%; box-shadow: 0 0 0 2rem rgba(15,157,138,0.035), 0 0 0 4rem rgba(15,157,138,0.025); }
+        .hero-kicker { position: relative; z-index: 1; color: var(--teal); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em; }
+        .hero-dot { display: inline-block; width: 7px; height: 7px; margin-right: 0.35rem; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 4px rgba(249,115,98,0.13); }
+        .hero-rule { display: inline-block; width: 2.5rem; height: 1px; margin: 0 0.6rem 0.2rem; background: #a9bfd3; }
+        .hero-title { position: relative; z-index: 1; margin: 0.55rem 0 1rem; font-family: "Avenir Next", "Trebuchet MS", sans-serif; font-size: 2.85rem; line-height: 0.98; font-weight: 800; letter-spacing: -0.045em; color: var(--ink); }
+        .hero-title span { color: var(--blue); }
+        .hero-footer { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(14rem, 0.8fr) minmax(18rem, 1.2fr); gap: 1.25rem; align-items: end; max-width: 52rem; padding-top: 0.9rem; border-top: 1px solid #cfdeeb; }
+        .hero-summary { font-size: 1.03rem; font-weight: 700; color: var(--ink); }
+        .hero-description { color: var(--muted); font-size: 0.93rem; line-height: 1.5; }
+        .hero-corner-mark { position: absolute; right: 1.5rem; bottom: 1.25rem; z-index: 1; color: rgba(16,42,67,0.22); font-size: 2.8rem; line-height: 0.8; font-weight: 800; text-align: right; }
+        .hero-corner-mark span { font-size: 0.48rem; letter-spacing: 0.12em; line-height: 1.1; }
+        .stButton>button { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; border-radius: 12px; padding: 0.65rem 1.2rem; font-weight: 600; box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18); transition: transform 160ms ease, box-shadow 160ms ease; }
+        .stButton>button:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25); }
+        .stDataFrame { border-radius: 12px; overflow: hidden; border: 1px solid #e6edf7; box-shadow: 0 8px 20px rgba(15,23,42,0.035); }
+        .stSelectbox > div > div, [data-testid="stFileUploader"] { border-radius: 10px; }
         .stMetric { background: rgba(255,255,255,0.95); border: 1px solid #edf2f7; border-radius: 14px; padding: 0.9rem; box-shadow: 0 8px 20px rgba(15,23,42,0.04); }
+        [data-testid="stMetricValue"] { color: var(--blue); }
+        [data-testid="stHorizontalBlock"] { gap: 1rem; }
         .stAlert, .stInfo, .stSuccess, .stWarning, .stError { border-radius: 12px; }
         .stTabs [role="tablist"] { gap: 0.5rem; }
         .stTabs [role="tab"] { border-radius: 10px 10px 0 0; }
-        .dashboard-hero {
-            background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(16,185,129,0.08));
-            border: 1px solid rgba(148,163,184,0.25);
-            border-radius: 18px;
-            padding: 1.2rem 1.4rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 10px 24px rgba(15,23,42,0.04);
-        }
+        @media (max-width: 768px) { .block-container { padding: 1rem 0.85rem 2rem; } .dashboard-hero { padding: 1.25rem 1.1rem 1.1rem; } .hero-title { font-size: 2.25rem; } .hero-footer { grid-template-columns: 1fr; gap: 0.45rem; } .hero-corner-mark { display: none; } }
         </style>
         """,
         unsafe_allow_html=True,
