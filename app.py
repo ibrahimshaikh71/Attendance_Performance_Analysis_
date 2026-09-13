@@ -402,7 +402,19 @@ def class_sort_key(value):
 
 
 def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
-    sns.set_style("whitegrid")
+    sns.set_theme(
+        style="darkgrid",
+        rc={
+            "axes.facecolor": "#101936",
+            "figure.facecolor": "#0a1028",
+            "axes.edgecolor": "#26345e",
+            "grid.color": "#25325a",
+            "text.color": "#dbe7ff",
+            "axes.labelcolor": "#9fb2d9",
+            "xtick.color": "#9fb2d9",
+            "ytick.color": "#9fb2d9",
+        },
+    )
 
     corr_columns = [
         "Attendance_Percentage",
@@ -421,7 +433,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             x="Attendance_Percentage",
             y="Average_Marks",
             hue="Attendance_Category",
-            palette="viridis",
+            palette={"Low": "#ff6b78", "Average": "#ffb454", "Good": "#32d6c0", "Excellent": "#8d72ff"},
             ax=ax,
         )
         sns.regplot(
@@ -430,7 +442,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             y="Average_Marks",
             scatter=False,
             ax=ax,
-            color="black",
+            color="#f5f7ff",
         )
         ax.set_title("Attendance vs Academic Performance")
         ax.set_xlabel("Attendance (%)")
@@ -444,7 +456,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             .reindex(["Low", "Average", "Good", "Excellent"])
         )
         fig, ax = plt.subplots(figsize=(8, 5))
-        category_means.plot(kind="bar", ax=ax, color="#4c72b0")
+        category_means.plot(kind="bar", ax=ax, color=["#ff6b78", "#ffb454", "#32d6c0", "#8d72ff"])
         ax.set_title("Average Marks by Attendance Category")
         ax.set_xlabel("Attendance Category")
         ax.set_ylabel("Average Marks")
@@ -463,7 +475,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             subject_means.plot(
                 kind="bar",
                 ax=ax,
-                color=["#ff7f0e", "#2ca02c", "#d62728"][: len(subject_means)],
+                color=["#32d6c0", "#8d72ff", "#ffb454"][: len(subject_means)],
             )
             ax.set_title("Average Subject Performance")
             ax.set_xlabel("Subject")
@@ -472,7 +484,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
         else:
             selected_col = subject_map[selected_subject]
             fig, ax = plt.subplots(figsize=(8, 5))
-            sns.histplot(df[selected_col], bins=10, kde=True, ax=ax, color="#1f77b4")
+            sns.histplot(df[selected_col], bins=10, kde=True, ax=ax, color="#32d6c0")
             ax.set_title(f"{selected_subject} Score Distribution")
             ax.set_xlabel(f"{selected_subject} Marks")
             ax.set_ylabel("Students")
@@ -481,7 +493,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
     with col4:
         class_attendance = df.groupby("Class")["Attendance_Percentage"].mean().sort_index()
         fig, ax = plt.subplots(figsize=(8, 5))
-        class_attendance.plot(kind="bar", ax=ax, color="#9467bd")
+        class_attendance.plot(kind="bar", ax=ax, color="#8d72ff")
         ax.set_title("Average Attendance by Class")
         ax.set_xlabel("Class")
         ax.set_ylabel("Attendance (%)")
@@ -513,7 +525,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
         df[corr_columns].corr(),
         annot=True,
         fmt=".2f",
-        cmap="coolwarm",
+        cmap="mako",
         center=0,
         ax=ax,
     )
@@ -540,44 +552,72 @@ def main():
     st.markdown(
         """
         <style>
-        :root { --ink: #102a43; --muted: #52606d; --line: #d9e2ec; --blue: #2563eb; --teal: #0f9d8a; --coral: #f97362; }
-        .stApp { background: radial-gradient(circle at 8% 0%, rgba(37,99,235,0.13), transparent 28rem), linear-gradient(180deg, #eef6ff 0%, #f8fbff 38%, #f1f5f9 100%); color: var(--ink); }
-        .stApp::before { content: ""; display: block; position: fixed; inset: 0 0 auto; height: 4px; z-index: 1000; background: linear-gradient(90deg, var(--blue) 0 62%, var(--teal) 62% 82%, var(--coral) 82% 100%); }
-        .block-container { max-width: 1500px; padding: 1.25rem 2rem 2.5rem; }
-        [data-testid="stSidebar"] { background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%); border-right: 1px solid #dfe9f7; }
+        :root { --ink: #edf3ff; --muted: #8d9bc1; --line: #27345f; --blue: #6e63ff; --teal: #32d6c0; --coral: #ff6b78; --surface: #101936; --surface-2: #151f46; }
+        .stApp { background: radial-gradient(circle at 82% -10%, rgba(110,99,255,0.22), transparent 28rem), radial-gradient(circle at 0% 80%, rgba(50,214,192,0.08), transparent 24rem), #080e25; color: var(--ink); }
+        .stApp::before { content: ""; display: block; position: fixed; inset: 0 0 auto; height: 3px; z-index: 1000; background: linear-gradient(90deg, var(--teal), var(--blue) 58%, var(--coral)); }
+        .block-container { max-width: 1500px; padding: 1.15rem 2rem 3rem; }
+        [data-testid="stHeader"] { background: rgba(8,14,37,0.78); }
+        [data-testid="stSidebar"] { background: linear-gradient(180deg, #0e1634 0%, #0a1029 100%); border-right: 1px solid #1c2850; }
         [data-testid="stSidebar"] > div:first-child { padding-top: 2rem; }
+        .sidebar-brand { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1.5rem; color: #f4f7ff; font-weight: 800; letter-spacing: 0.02em; }
+        .sidebar-brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 9px; color: #081027; background: linear-gradient(135deg, var(--teal), #7182ff); box-shadow: 0 8px 18px rgba(50,214,192,0.22); }
+        .sidebar-brand small { display: block; margin-top: 0.15rem; color: #7f90b8; font-size: 0.58rem; letter-spacing: 0.14em; font-weight: 700; }
         [data-testid="stSidebar"] .stMarkdown p { color: var(--muted); }
+        [data-testid="stSidebar"] label, [data-testid="stSidebar"] .stFileUploader p { color: #ffffff !important; font-weight: 700; }
+        [data-testid="stSidebar"] h3, [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { color: #ffffff !important; font-weight: 800; }
+        .stSelectbox label, .stSelectSlider label, [data-testid="stWidgetLabel"] p { color: #ffffff !important; font-weight: 700; }
         h1, h2, h3 { color: var(--ink); letter-spacing: 0; }
-        h2, h3 { border-left: 4px solid var(--teal); padding-left: 0.65rem; }
+        h2, h3 { border-left: 3px solid var(--teal); padding-left: 0.65rem; }
         [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { border-left: 0; padding-left: 0; }
-        .dashboard-hero { position: relative; overflow: hidden; background: linear-gradient(112deg, #ffffff 0%, #f4f9ff 58%, #e5f7f2 100%); border: 1px solid #d8e5f1; border-radius: 24px; padding: 1.5rem 2rem 1.35rem; margin: 0.25rem 0 1.45rem; box-shadow: 0 18px 40px rgba(31, 64, 104, 0.09); }
-        .dashboard-hero::after { content: ""; position: absolute; width: 18rem; height: 18rem; right: -6rem; top: -9rem; border: 1px solid rgba(15,157,138,0.18); border-radius: 50%; box-shadow: 0 0 0 2rem rgba(15,157,138,0.035), 0 0 0 4rem rgba(15,157,138,0.025); }
-        .hero-kicker { position: relative; z-index: 1; color: var(--teal); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em; }
-        .hero-dot { display: inline-block; width: 7px; height: 7px; margin-right: 0.35rem; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 4px rgba(249,115,98,0.13); }
-        .hero-rule { display: inline-block; width: 2.5rem; height: 1px; margin: 0 0.6rem 0.2rem; background: #a9bfd3; }
-        .hero-title { position: relative; z-index: 1; margin: 0.55rem 0 1rem; font-family: "Avenir Next", "Trebuchet MS", sans-serif; font-size: 2.85rem; line-height: 0.98; font-weight: 800; letter-spacing: -0.045em; color: var(--ink); }
-        .hero-title span { color: var(--blue); }
-        .hero-footer { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(14rem, 0.8fr) minmax(18rem, 1.2fr); gap: 1.25rem; align-items: end; max-width: 52rem; padding-top: 0.9rem; border-top: 1px solid #cfdeeb; }
-        .hero-summary { font-size: 1.03rem; font-weight: 700; color: var(--ink); }
-        .hero-description { color: var(--muted); font-size: 0.93rem; line-height: 1.5; }
-        .hero-corner-mark { position: absolute; right: 1.5rem; bottom: 1.25rem; z-index: 1; color: rgba(16,42,67,0.22); font-size: 2.8rem; line-height: 0.8; font-weight: 800; text-align: right; }
+        .dashboard-hero { position: relative; overflow: hidden; background: linear-gradient(118deg, #111a3b 0%, #121b42 55%, #1c1b50 100%); border: 1px solid #2b3970; border-radius: 20px; padding: 1.4rem 1.8rem 1.25rem; margin: 0.2rem 0 1.25rem; box-shadow: 0 22px 50px rgba(0,0,0,0.28); }
+        .dashboard-hero::after { content: ""; position: absolute; width: 20rem; height: 20rem; right: -7rem; top: -10rem; border: 1px solid rgba(50,214,192,0.26); border-radius: 50%; box-shadow: 0 0 0 2rem rgba(50,214,192,0.04), 0 0 0 4rem rgba(110,99,255,0.06); }
+        .hero-kicker { position: relative; z-index: 1; color: var(--teal); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; }
+        .hero-dot { display: inline-block; width: 7px; height: 7px; margin-right: 0.35rem; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 4px rgba(255,107,120,0.12); }
+        .hero-rule { display: inline-block; width: 2.5rem; height: 1px; margin: 0 0.6rem 0.2rem; background: #51608d; }
+        .hero-title { position: relative; z-index: 1; margin: 0.55rem 0 1rem; font-family: "Avenir Next", "Trebuchet MS", sans-serif; font-size: 2.85rem; line-height: 0.98; font-weight: 800; letter-spacing: -0.045em; color: #ffffff; }
+        .hero-title span { color: var(--teal); }
+        .hero-footer { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(14rem, 0.8fr) minmax(18rem, 1.2fr); gap: 1.25rem; align-items: end; max-width: 52rem; padding-top: 0.9rem; border-top: 1px solid #2a3768; }
+        .hero-summary { font-size: 1.03rem; font-weight: 700; color: #f4f7ff; }
+        .hero-description { color: #9eadd0; font-size: 0.93rem; line-height: 1.5; }
+        .hero-corner-mark { position: absolute; right: 1.5rem; bottom: 1.25rem; z-index: 1; color: rgba(193,210,255,0.22); font-size: 2.8rem; line-height: 0.8; font-weight: 800; text-align: right; }
         .hero-corner-mark span { font-size: 0.48rem; letter-spacing: 0.12em; line-height: 1.1; }
-        .stButton>button { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; border-radius: 12px; padding: 0.65rem 1.2rem; font-weight: 600; box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18); transition: transform 160ms ease, box-shadow 160ms ease; }
-        .stButton>button:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25); }
-        .stDataFrame { border-radius: 12px; overflow: hidden; border: 1px solid #e6edf7; box-shadow: 0 8px 20px rgba(15,23,42,0.035); }
-        .stSelectbox > div > div, [data-testid="stFileUploader"] { border-radius: 10px; }
-        .stMetric { background: rgba(255,255,255,0.95); border: 1px solid #edf2f7; border-radius: 14px; padding: 0.9rem; box-shadow: 0 8px 20px rgba(15,23,42,0.04); }
-        [data-testid="stMetricValue"] { color: var(--blue); }
+        .stButton>button { background: linear-gradient(135deg, #7065ff, #5248df); color: white; border: 1px solid #8178ff; border-radius: 9px; padding: 0.65rem 1.2rem; font-weight: 700; box-shadow: 0 10px 24px rgba(82,72,223,0.28); transition: transform 160ms ease, box-shadow 160ms ease; }
+        .stButton>button:hover { background: linear-gradient(135deg, #8076ff, #5b50ed); transform: translateY(-1px); box-shadow: 0 14px 28px rgba(82,72,223,0.38); }
+        [data-testid="stDownloadButton"] { margin: 0.75rem 0 1.25rem; }
+        [data-testid="stDownloadButton"] button { width: 100%; min-height: 2.75rem; background: linear-gradient(135deg, #32d6c0, #218fbe) !important; color: #061326 !important; border: 1px solid #50e8d4 !important; border-radius: 9px; font-weight: 800; opacity: 1 !important; box-shadow: 0 10px 24px rgba(50,214,192,0.2); }
+        [data-testid="stDownloadButton"] button p, [data-testid="stDownloadButton"] button span { color: #061326 !important; font-weight: 800; opacity: 1 !important; }
+        [data-testid="stDownloadButton"] button:hover { background: linear-gradient(135deg, #54f0db, #37a9d8) !important; color: #041020 !important; box-shadow: 0 14px 28px rgba(50,214,192,0.32); transform: translateY(-1px); }
+        [data-testid="stDownloadButton"] button:focus { outline: 2px solid #ffffff; outline-offset: 2px; }
+        .stDataFrame { border-radius: 10px; overflow: hidden; border: 1px solid #26335e; box-shadow: 0 12px 28px rgba(0,0,0,0.18); }
+        .stSelectbox > div > div, [data-testid="stFileUploader"] { border-radius: 9px; background: #111a3b; border-color: #2a396d; }
+        .stSelectbox [data-baseweb="select"] * { color: #dce6ff; }
+        .stMetric { background: linear-gradient(145deg, #141f48, #101936); border: 1px solid #29386b; border-radius: 12px; padding: 0.85rem; box-shadow: 0 12px 25px rgba(0,0,0,0.2); }
+        [data-testid="stMetricLabel"] { color: #8e9fc8; }
+        [data-testid="stMetricValue"] { color: #ffffff; }
         [data-testid="stHorizontalBlock"] { gap: 1rem; }
-        .stAlert, .stInfo, .stSuccess, .stWarning, .stError { border-radius: 12px; }
+        .stAlert, .stInfo, .stSuccess, .stWarning, .stError { border-radius: 10px; background: #121d43; border-color: #2e4078; color: #dce6ff; }
+        .stAlert p, .stInfo p, .stSuccess p, .stWarning p, .stError p { color: #dce6ff; }
+        [data-testid="stFileUploader"] section { background: #111a3b; border: 1px dashed #344477; }
+        [data-testid="stFileUploader"] button { background: #182452; border-color: #3a4c84; color: #dce6ff; }
+        [data-testid="stExpander"] { background: #101936; border: 1px solid #26345f; border-radius: 10px; }
+        .stCaption, [data-testid="stCaptionContainer"] { color: #8292b9; }
         .stTabs [role="tablist"] { gap: 0.5rem; }
-        .stTabs [role="tab"] { border-radius: 10px 10px 0 0; }
+        .stTabs [role="tab"] { border-radius: 9px 9px 0 0; color: #9eadd0; }
         @media (max-width: 768px) { .block-container { padding: 1rem 0.85rem 2rem; } .dashboard-hero { padding: 1.25rem 1.1rem 1.1rem; } .hero-title { font-size: 2.25rem; } .hero-footer { grid-template-columns: 1fr; gap: 0.45rem; } .hero-corner-mark { display: none; } }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-mark">A</div>
+            <div>ATTENDANCE LAB<small>PERFORMANCE INTELLIGENCE</small></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.sidebar.header("Data Controls")
     st.sidebar.write("Choose a dataset or upload your own file to begin analysis.")
 
