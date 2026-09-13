@@ -130,16 +130,23 @@ def normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
         for name in [
             "Student_ID",
             "Student_Name",
+            "Student_Roll_Number",
             "Class",
             "Gender",
             *NUMERIC_COLUMNS,
         ]
     }
+    column_aliases = {
+        "student_roll_no": "Student_Roll_Number",
+        "student_roll_number": "Student_Roll_Number",
+    }
     renamed_columns = {}
     for column in df.columns:
         normalized = re.sub(r"[^0-9A-Za-z]+", "_", str(column).strip()).strip("_")
         normalized = re.sub(r"_+", "_", normalized)
-        renamed_columns[column] = canonical_names.get(normalized.lower(), normalized)
+        renamed_columns[column] = canonical_names.get(
+            normalized.lower(), column_aliases.get(normalized.lower(), normalized)
+        )
     return df.rename(columns=renamed_columns)
 
 
@@ -502,21 +509,94 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
 
     st.subheader("Study Time and Performance")
     st.caption("Explore how daily study hours relate to average marks. Hover over points to inspect individual records.")
+    identifier_columns = [
+        column
+        for column in ["Student_ID", "Student_Name", "Student_Roll_Number"]
+        if column in df.columns
+    ]
+    if "Student_Name" not in identifier_columns:
+        name_candidates = [
+            column
+            for column in df.columns
+            if column not in {
+                "Student_ID",
+                "Student_Roll_Number",
+                "Class",
+                "Gender",
+                "Attendance_Category",
+                *NUMERIC_COLUMNS,
+            }
+                and pd.api.types.is_string_dtype(df[column])
+        ]
+        if name_candidates:
+            df = df.rename(columns={name_candidates[0]: "Student_Name"})
+            identifier_columns.append("Student_Name")
+
+    if "Student_Name" in df.columns and "Student_Roll_Number" in df.columns:
+        df["Student_Key"] = (
+            df["Student_Name"].astype(str)
+            + " | Roll "
+            + df["Student_Roll_Number"].astype(str)
+        )
+    elif "Student_Name" in df.columns:
+        df["Student_Key"] = df["Student_Name"].astype(str)
+    elif "Student_Roll_Number" in df.columns:
+        df["Student_Key"] = "Roll " + df["Student_Roll_Number"].astype(str)
+    elif "Student_ID" in df.columns:
+        df["Student_Key"] = df["Student_ID"].astype(str)
+    else:
+        df["Student_Key"] = df.index.astype(str)
+
     interactive_df = df[
-        [
+        ["Student_Key"]
+        + [
             "Study_Hours_Per_Day",
             "Average_Marks",
             "Attendance_Category",
             "Class",
         ]
     ].dropna()
-    st.scatter_chart(
+    st.vega_lite_chart(
         interactive_df,
-        x="Study_Hours_Per_Day",
-        y="Average_Marks",
-        color="Attendance_Category",
-        size="Average_Marks",
-        height=390,
+        {
+            "mark": {"type": "circle", "opacity": 0.85, "size": 90},
+            "selection": {
+                "grid": {
+                    "type": "interval",
+                    "bind": "scales",
+                }
+            },
+            "encoding": {
+                "x": {
+                    "field": "Study_Hours_Per_Day",
+                    "type": "quantitative",
+                    "title": "Study Hours Per Day",
+                },
+                "y": {
+                    "field": "Average_Marks",
+                    "type": "quantitative",
+                    "title": "Average Marks",
+                },
+                "color": {
+                    "field": "Attendance_Category",
+                    "type": "nominal",
+                    "title": "Attendance Category",
+                },
+                "size": {
+                    "field": "Average_Marks",
+                    "type": "quantitative",
+                    "legend": None,
+                },
+                "tooltip": [
+                    {"field": "Student_Key", "type": "nominal", "title": "Student"},
+                    {"field": "Study_Hours_Per_Day", "type": "quantitative", "title": "Study Hours"},
+                    {"field": "Average_Marks", "type": "quantitative", "title": "Average Marks"},
+                    {"field": "Attendance_Category", "type": "nominal", "title": "Attendance"},
+                    {"field": "Class", "type": "nominal", "title": "Class"},
+                ],
+            },
+            "height": 390,
+        },
         width="stretch",
     )
 
@@ -543,7 +623,6 @@ def main():
                 <div class="hero-summary">Academic overview and student risk monitoring</div>
                 <div class="hero-description">Review attendance patterns, subject trends, and student risk levels in one focused workspace.</div>
             </div>
-            <div class="hero-corner-mark">01<br><span>ACADEMIC<br>YEAR</span></div>
         </section>
         """,
         unsafe_allow_html=True,
@@ -568,7 +647,8 @@ def main():
         .stSelectbox label, .stSelectSlider label, [data-testid="stWidgetLabel"] p { color: #ffffff !important; font-weight: 700; }
         h1, h2, h3 { color: var(--ink); letter-spacing: 0; }
         h2, h3 { border-left: 3px solid var(--teal); padding-left: 0.65rem; }
-        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { border-left: 0; padding-left: 0; }
+        [data-testid="stSidebar"] h2 { color: #ffffff !important; border-left: 3px solid var(--teal); padding-left: 0.65rem; font-size: 1.1rem; letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 1px 8px rgba(50,214,192,0.2); }
+        [data-testid="stSidebar"] h3 { border-left: 0; padding-left: 0; }
         .dashboard-hero { position: relative; overflow: hidden; background: linear-gradient(118deg, #111a3b 0%, #121b42 55%, #1c1b50 100%); border: 1px solid #2b3970; border-radius: 20px; padding: 1.4rem 1.8rem 1.25rem; margin: 0.2rem 0 1.25rem; box-shadow: 0 22px 50px rgba(0,0,0,0.28); }
         .dashboard-hero::after { content: ""; position: absolute; width: 20rem; height: 20rem; right: -7rem; top: -10rem; border: 1px solid rgba(50,214,192,0.26); border-radius: 50%; box-shadow: 0 0 0 2rem rgba(50,214,192,0.04), 0 0 0 4rem rgba(110,99,255,0.06); }
         .hero-kicker { position: relative; z-index: 1; color: var(--teal); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; }
@@ -713,9 +793,6 @@ def main():
         subject_summary = subject_summary.rename(index=lambda col: normalize_subject_name(col))
     st.write("### Subject-wise Averages")
     st.dataframe(subject_summary)
-
-    correlation = filtered_df["Attendance_Percentage"].corr(filtered_df["Average_Marks"])
-    st.info(f"Attendance vs Average Marks correlation: {correlation:.3f}")
 
     render_charts(filtered_df, selected_subject)
 
