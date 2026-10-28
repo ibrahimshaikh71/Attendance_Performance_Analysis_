@@ -1,7 +1,6 @@
 import io
 import re
 
-import altair as alt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -554,7 +553,7 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
         st.pyplot(fig)
 
     st.subheader("Study Time and Performance")
-    st.caption("Explore how daily study hours relate to average marks. Hover over points to inspect individual records.")
+    st.caption("Each point represents one student; the line shows the overall trend.")
     identifier_columns = [
         column
         for column in ["Student_ID", "Student_Name", "Student_Roll_Number"]
@@ -608,41 +607,50 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             "Check those columns in the uploaded file."
         )
     else:
-        x_axis = alt.X(
-            "Study_Hours_Per_Day:Q",
-            title="Study Hours Per Day",
-            scale=alt.Scale(domainMin=0),
+        interactive_df["Attendance_Category"] = (
+            interactive_df["Attendance_Category"].astype("string").fillna("Not classified")
         )
-        y_axis = alt.Y(
-            "Average_Marks:Q",
-            title="Average Marks",
-            scale=alt.Scale(domain=[0, 100]),
+        fig, ax = plt.subplots(figsize=(10, 5.5))
+        palette = {
+            "Low": "#ff6b78",
+            "Average": "#ffb454",
+            "Good": "#32d6c0",
+            "Excellent": "#8d72ff",
+            "Not classified": "#9fb2d9",
+        }
+        for category, group in interactive_df.groupby("Attendance_Category", sort=False):
+            ax.scatter(
+                group["Study_Hours_Per_Day"],
+                group["Average_Marks"],
+                label=category,
+                color=palette.get(category, "#9fb2d9"),
+                s=42,
+                alpha=0.68,
+                edgecolors="#0a1028",
+                linewidths=0.45,
+            )
+
+        study_values = interactive_df["Study_Hours_Per_Day"].to_numpy(dtype=float)
+        mark_values = interactive_df["Average_Marks"].to_numpy(dtype=float)
+        if len(interactive_df) > 1 and np.unique(study_values).size > 1:
+            trend_x = np.linspace(study_values.min(), study_values.max(), 100)
+            trend_y = np.polyval(np.polyfit(study_values, mark_values, 1), trend_x)
+            ax.plot(trend_x, trend_y, color="#ffffff", linewidth=2, alpha=0.9, label="Overall trend")
+
+        x_padding = max((study_values.max() - study_values.min()) * 0.06, 0.25)
+        y_padding = max((mark_values.max() - mark_values.min()) * 0.12, 3)
+        ax.set_xlim(max(0, study_values.min() - x_padding), study_values.max() + x_padding)
+        ax.set_ylim(
+            max(0, mark_values.min() - y_padding),
+            min(100, mark_values.max() + y_padding),
         )
-        point_layer = alt.Chart(interactive_df).mark_circle(
-            size=48,
-            opacity=0.6,
-            stroke="#0a1028",
-            strokeWidth=0.5,
-        ).encode(
-            x=x_axis,
-            y=y_axis,
-            color=alt.Color("Attendance_Category:N", title="Attendance Category"),
-            tooltip=[
-                alt.Tooltip("Student_Key:N", title="Student"),
-                alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours", format=".2f"),
-                alt.Tooltip("Average_Marks:Q", title="Average Marks", format=".1f"),
-                alt.Tooltip("Attendance_Category:N", title="Attendance"),
-                alt.Tooltip("Class:N", title="Class"),
-            ],
-        )
-        trend_layer = (
-            alt.Chart(interactive_df)
-            .transform_regression("Study_Hours_Per_Day", "Average_Marks")
-            .mark_line(color="#ffffff", strokeWidth=2, opacity=0.85)
-            .encode(x=x_axis, y=y_axis)
-        )
-        study_chart = (point_layer + trend_layer).properties(height=390).interactive()
-        st.altair_chart(study_chart, width="stretch")
+        ax.set_title("Study Time and Performance")
+        ax.set_xlabel("Study Hours Per Day")
+        ax.set_ylabel("Average Marks")
+        ax.legend(title="Attendance Category", frameon=False)
+        ax.grid(True, alpha=0.2)
+        fig.tight_layout()
+        st.pyplot(fig, clear_figure=True)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(
