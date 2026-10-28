@@ -57,7 +57,11 @@ def normalize_subject_name(column_name: str) -> str:
 def get_subject_options(df: pd.DataFrame) -> dict:
     subject_columns = []
     for column in df.columns:
-        if column.endswith("_Marks") and column not in {"Average_Marks"}:
+        if (
+            column.endswith("_Marks")
+            and column not in {"Average_Marks", "Previous_Marks"}
+            and df[column].notna().any()
+        ):
             subject_columns.append(column)
 
     return {normalize_subject_name(column): column for column in subject_columns}
@@ -153,8 +157,19 @@ def normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df = normalize_column_names(df).drop_duplicates().copy()
     for col in NUMERIC_COLUMNS:
+        if col not in df.columns:
+            df[col] = np.nan
+    for col in NUMERIC_COLUMNS:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=NUMERIC_COLUMNS)
+    subject_columns = [
+        col for col in df.columns
+        if col.endswith("_Marks") and col not in {"Average_Marks", "Previous_Marks"}
+    ]
+    if subject_columns:
+        df["Average_Marks"] = df["Average_Marks"].fillna(df[subject_columns].mean(axis=1))
+    if "Class" not in df.columns:
+        df["Class"] = np.nan
+    df = df.dropna(subset=["Class", "Attendance_Percentage", "Average_Marks"])
     df["Attendance_Category"] = pd.cut(
         df["Attendance_Percentage"],
         bins=[0, 69.99, 79.99, 89.99, 100],
@@ -183,7 +198,12 @@ def build_regression_model(df: pd.DataFrame) -> tuple:
     except ValueError:
         return 0.0, 0.0
 
-    model = LinearRegression()
+    model = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("regression", LinearRegression()),
+        ]
+    )
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
     mae = mean_absolute_error(y_test, predictions)
@@ -724,6 +744,11 @@ def main():
         return
 
     df = clean_data(st.session_state["df"])
+    if df.empty:
+        st.warning(
+            "No usable records were found. Include Class and Attendance Percentage, plus Average Marks or at least one subject marks column."
+        )
+        return
 
     with st.sidebar:
         st.markdown("---")
@@ -744,9 +769,7 @@ def main():
         filtered_df = filtered_df[filtered_df[subject_map[selected_subject]].notna()].copy()
 
     if filtered_df.empty:
-        st.warning(
-            "No records match the current class and subject filters. Try choosing a broader filter or switching back to All Classes / All Subjects."
-        )
+        st.warning("No records match the current filters. Choose All Classes and All Subjects to see the full dataset.")
         return
 
     st.markdown("---")
@@ -784,9 +807,7 @@ def main():
     )
 
     if selected_subject == "All Subjects":
-        subject_summary = filtered_df[
-            [col for col in filtered_df.columns if col.endswith("_Marks") and col != "Average_Marks"]
-        ].mean().round(2)
+        subject_summary = filtered_df[list(subject_map.values())].mean().round(2)
         subject_summary = subject_summary.rename(index=lambda col: normalize_subject_name(col))
     else:
         subject_summary = filtered_df[[subject_map[selected_subject]]].mean().round(2)
