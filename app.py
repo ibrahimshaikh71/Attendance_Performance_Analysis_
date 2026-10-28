@@ -608,23 +608,40 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             "Check those columns in the uploaded file."
         )
     else:
-        study_chart = (
-            alt.Chart(interactive_df)
-            .mark_circle(size=90, opacity=0.85)
-            .encode(
-                x=alt.X("Study_Hours_Per_Day:Q", title="Study Hours Per Day"),
-                y=alt.Y("Average_Marks:Q", title="Average Marks"),
-                color=alt.Color("Attendance_Category:N", title="Attendance Category"),
-                tooltip=[
-                    alt.Tooltip("Student_Key:N", title="Student"),
-                    alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours"),
-                    alt.Tooltip("Average_Marks:Q", title="Average Marks"),
-                    alt.Tooltip("Attendance_Category:N", title="Attendance"),
-                    alt.Tooltip("Class:N", title="Class"),
-                ],
-            )
-            .interactive()
+        x_axis = alt.X(
+            "Study_Hours_Per_Day:Q",
+            title="Study Hours Per Day",
+            scale=alt.Scale(domainMin=0),
         )
+        y_axis = alt.Y(
+            "Average_Marks:Q",
+            title="Average Marks",
+            scale=alt.Scale(domain=[0, 100]),
+        )
+        point_layer = alt.Chart(interactive_df).mark_circle(
+            size=48,
+            opacity=0.6,
+            stroke="#0a1028",
+            strokeWidth=0.5,
+        ).encode(
+            x=x_axis,
+            y=y_axis,
+            color=alt.Color("Attendance_Category:N", title="Attendance Category"),
+            tooltip=[
+                alt.Tooltip("Student_Key:N", title="Student"),
+                alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours", format=".2f"),
+                alt.Tooltip("Average_Marks:Q", title="Average Marks", format=".1f"),
+                alt.Tooltip("Attendance_Category:N", title="Attendance"),
+                alt.Tooltip("Class:N", title="Class"),
+            ],
+        )
+        trend_layer = (
+            alt.Chart(interactive_df)
+            .transform_regression("Study_Hours_Per_Day", "Average_Marks")
+            .mark_line(color="#ffffff", strokeWidth=2, opacity=0.85)
+            .encode(x=x_axis, y=y_axis)
+        )
+        study_chart = (point_layer + trend_layer).properties(height=390).interactive()
         st.altair_chart(study_chart, width="stretch")
 
     fig, ax = plt.subplots(figsize=(8, 6))
