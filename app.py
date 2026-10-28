@@ -1,6 +1,7 @@
 import io
 import re
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -568,57 +569,38 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
         df["Student_Key"] = df.index.astype(str)
 
     interactive_df = df[
-        ["Student_Key"]
-        + [
+        [
+            "Student_Key",
             "Study_Hours_Per_Day",
             "Average_Marks",
             "Attendance_Category",
             "Class",
         ]
-    ].dropna()
-    st.vega_lite_chart(
-        interactive_df,
-        {
-            "mark": {"type": "circle", "opacity": 0.85, "size": 90},
-            "selection": {
-                "grid": {
-                    "type": "interval",
-                    "bind": "scales",
-                }
-            },
-            "encoding": {
-                "x": {
-                    "field": "Study_Hours_Per_Day",
-                    "type": "quantitative",
-                    "title": "Study Hours Per Day",
-                },
-                "y": {
-                    "field": "Average_Marks",
-                    "type": "quantitative",
-                    "title": "Average Marks",
-                },
-                "color": {
-                    "field": "Attendance_Category",
-                    "type": "nominal",
-                    "title": "Attendance Category",
-                },
-                "size": {
-                    "field": "Average_Marks",
-                    "type": "quantitative",
-                    "legend": None,
-                },
-                "tooltip": [
-                    {"field": "Student_Key", "type": "nominal", "title": "Student"},
-                    {"field": "Study_Hours_Per_Day", "type": "quantitative", "title": "Study Hours"},
-                    {"field": "Average_Marks", "type": "quantitative", "title": "Average Marks"},
-                    {"field": "Attendance_Category", "type": "nominal", "title": "Attendance"},
-                    {"field": "Class", "type": "nominal", "title": "Class"},
+    ].dropna(subset=["Study_Hours_Per_Day", "Average_Marks"])
+    if interactive_df.empty:
+        st.info(
+            "This chart needs numeric values in both Study Hours Per Day and Average Marks. "
+            "Check those columns in the uploaded file."
+        )
+    else:
+        study_chart = (
+            alt.Chart(interactive_df)
+            .mark_circle(size=90, opacity=0.85)
+            .encode(
+                x=alt.X("Study_Hours_Per_Day:Q", title="Study Hours Per Day"),
+                y=alt.Y("Average_Marks:Q", title="Average Marks"),
+                color=alt.Color("Attendance_Category:N", title="Attendance Category"),
+                tooltip=[
+                    alt.Tooltip("Student_Key:N", title="Student"),
+                    alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours"),
+                    alt.Tooltip("Average_Marks:Q", title="Average Marks"),
+                    alt.Tooltip("Attendance_Category:N", title="Attendance"),
+                    alt.Tooltip("Class:N", title="Class"),
                 ],
-            },
-            "height": 390,
-        },
-        width="stretch",
-    )
+            )
+            .interactive()
+        )
+        st.altair_chart(study_chart, width="stretch")
 
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(
