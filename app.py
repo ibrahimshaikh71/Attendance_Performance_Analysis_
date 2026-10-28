@@ -608,50 +608,19 @@ def render_charts(df: pd.DataFrame, selected_subject: str = "All Subjects"):
             "Check those columns in the uploaded file."
         )
     else:
-        mean_by_hours = (
-            interactive_df.groupby("Study_Hours_Per_Day", as_index=False)
-            .agg(
-                Average_Marks=("Average_Marks", "mean"),
-                Student_Count=("Average_Marks", "size"),
-            )
-        )
-        max_study_hours = float(interactive_df["Study_Hours_Per_Day"].max())
-        x_domain_max = max(1, int(np.ceil(max_study_hours)))
-        x_axis = alt.X(
-            "Study_Hours_Per_Day:Q",
-            title="Study Hours Per Day",
-            scale=alt.Scale(domain=[0, x_domain_max], nice=False),
-            axis=alt.Axis(tickMinStep=1, format=".0f"),
-        )
-        y_axis = alt.Y("Average_Marks:Q", title="Average Marks")
         study_chart = (
             alt.Chart(interactive_df)
-            .mark_circle(size=32, opacity=0.32)
+            .mark_circle(size=90, opacity=0.85)
             .encode(
-                x=x_axis,
-                y=y_axis,
+                x=alt.X("Study_Hours_Per_Day:Q", title="Study Hours Per Day"),
+                y=alt.Y("Average_Marks:Q", title="Average Marks"),
                 color=alt.Color("Attendance_Category:N", title="Attendance Category"),
                 tooltip=[
                     alt.Tooltip("Student_Key:N", title="Student"),
-                    alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours", format=".1f"),
-                    alt.Tooltip("Average_Marks:Q", title="Average Marks", format=".1f"),
+                    alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours"),
+                    alt.Tooltip("Average_Marks:Q", title="Average Marks"),
                     alt.Tooltip("Attendance_Category:N", title="Attendance"),
                     alt.Tooltip("Class:N", title="Class"),
-                ],
-            )
-            + alt.Chart(mean_by_hours)
-            .mark_line(
-                color="#ffffff",
-                strokeWidth=2,
-                point=alt.OverlayMarkDef(size=65, filled=True),
-            )
-            .encode(
-                x=x_axis,
-                y=y_axis,
-                tooltip=[
-                    alt.Tooltip("Study_Hours_Per_Day:Q", title="Study Hours", format=".1f"),
-                    alt.Tooltip("Average_Marks:Q", title="Mean Marks", format=".1f"),
-                    alt.Tooltip("Student_Count:Q", title="Students", format="d"),
                 ],
             )
             .interactive()
