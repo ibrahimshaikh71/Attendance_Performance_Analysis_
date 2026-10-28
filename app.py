@@ -144,14 +144,32 @@ def normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     column_aliases = {
         "student_roll_no": "Student_Roll_Number",
         "student_roll_number": "Student_Roll_Number",
+        "study_hours": "Study_Hours_Per_Day",
+        "study_hours_day": "Study_Hours_Per_Day",
+        "study_hours_daily": "Study_Hours_Per_Day",
+        "study_hours_per_day_hrs": "Study_Hours_Per_Day",
+        "study_hours_per_day_hours": "Study_Hours_Per_Day",
+        "average_score": "Average_Marks",
+        "avg_marks": "Average_Marks",
+        "average_marks_percent": "Average_Marks",
+        "average_marks_percentage": "Average_Marks",
     }
     renamed_columns = {}
     for column in df.columns:
         normalized = re.sub(r"[^0-9A-Za-z]+", "_", str(column).strip()).strip("_")
         normalized = re.sub(r"_+", "_", normalized)
-        renamed_columns[column] = canonical_names.get(
-            normalized.lower(), column_aliases.get(normalized.lower(), normalized)
-        )
+        lowered = normalized.lower()
+        canonical = canonical_names.get(lowered, column_aliases.get(lowered))
+        tokens = set(lowered.split("_"))
+        if canonical is None and "study" in tokens and tokens.intersection(
+            {"hour", "hours", "hr", "hrs", "studytime"}
+        ):
+            canonical = "Study_Hours_Per_Day"
+        if canonical is None and tokens.intersection({"average", "avg"}) and tokens.intersection(
+            {"marks", "score", "scores"}
+        ):
+            canonical = "Average_Marks"
+        renamed_columns[column] = canonical or normalized
     return df.rename(columns=renamed_columns)
 
 
@@ -161,7 +179,14 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         if col not in df.columns:
             df[col] = np.nan
     for col in NUMERIC_COLUMNS:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+        numeric_values = pd.to_numeric(df[col], errors="coerce")
+        text_values = (
+            df[col]
+            .astype("string")
+            .str.replace(",", "", regex=False)
+            .str.extract(r"([-+]?\d*\.?\d+)", expand=False)
+        )
+        df[col] = numeric_values.fillna(pd.to_numeric(text_values, errors="coerce"))
     subject_columns = [
         col for col in df.columns
         if col.endswith("_Marks") and col not in {"Average_Marks", "Previous_Marks"}
